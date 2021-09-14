@@ -260,6 +260,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("1", self.imageHolder["1"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Two(self, event):
         if self.validClick:
@@ -267,6 +270,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("2", self.imageHolder["2"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Three(self, event):
         if self.validClick:
@@ -274,6 +280,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("3", self.imageHolder["3"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Four(self, event):
         if self.validClick:
@@ -281,6 +290,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("4", self.imageHolder["4"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Five(self, event):
         if self.validClick:
@@ -288,6 +300,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("5", self.imageHolder["5"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Six(self, event):
         if self.validClick:
@@ -295,6 +310,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("6", self.imageHolder["6"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Seven(self, event):
         if self.validClick:
@@ -302,6 +320,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("7", self.imageHolder["7"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Eight(self, event):
         if self.validClick:
@@ -309,6 +330,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("8", self.imageHolder["8"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Nine(self, event):
         if self.validClick:
@@ -316,6 +340,9 @@ class GameBoard(tk.Frame):
             col = self.desiredSquare[1]
             self.AddPiece("9", self.imageHolder["9"], row, col)
             self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Delete(self, event):
         if event.keysym == "BackSpace":
@@ -323,6 +350,9 @@ class GameBoard(tk.Frame):
                 row = self.falseSquare[0]
                 col = self.falseSquare[1]
                 self.RemovePiece(row,col)
+                self.canvas.delete("highlight")  # Clear highlighting
+                self.canvas.delete("example")
+                self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Initiate(self):
         '''
