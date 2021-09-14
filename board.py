@@ -38,6 +38,7 @@ class GameBoard(tk.Frame):
         self.boardArrayPieces = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
 
         self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
+        self.falseSquare = [] # Allows squares to be cleared
         self.validClick = False # This allows the board to know if a valid square to move to has been selected or not. This is stored on this level as it effects labels
         self.moveSquare = [] # This is the square that the player wants to move to
 
@@ -138,6 +139,7 @@ class GameBoard(tk.Frame):
         self.canvas.bind("<Button 1>",self.GetCoords) # This allows the clicking to be tracked
         # Adding all the numbers for adding values
         self.canvas.focus_set()
+        self.canvas.bind("<Key>",self.Delete)  # This allows the clicking to be tracked
         self.canvas.bind("1",self.One) # This allows the clicking to be tracked
         self.canvas.bind("2",self.Two) # This allows the clicking to be tracked
         self.canvas.bind("3",self.Three) # This allows the clicking to be tracked
@@ -178,13 +180,12 @@ class GameBoard(tk.Frame):
         if col <= self.columns-1 and row <= self.rows-1: # Have we clicked within the bounds of the board
             self.HighlightSquare(row,col,"blue",'highlight') # Adding a blue edge around the square
             # Then checking for what piece that is
-            found_key = []
             if self.boardArrayPieces.loc[row,col] != 0:
-                found_key = self.boardArrayPieces.loc[row,col]
                 self.validClick = False
                 self.canvas.delete("highlight")  # Clear highlighting
                 self.canvas.delete("example")
                 self.HighlightSquare(row,col,"red",'highlight')  # Display a red edge
+                self.falseSquare = [row,col]
             else:
                 self.canvas.delete("move")  # Clearing all types of highlighting currently o the board
                 self.canvas.delete("highlight")
@@ -237,8 +238,21 @@ class GameBoard(tk.Frame):
         # We can add a piece to the board at the requested location
         x0 = (column * self.size) + int(self.size/2) + 2 # Works out where it should be in pixels
         y0 = (row * self.size) + int(self.size/2) + 2
-        self.canvas.create_image(x0,y0, image=image, tag=name, anchor="c") # First we create the image in the top left
+        tag_name = str(row)+"_"+str(column)
+        self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "piece"), anchor="c") # First we create the image in the top left
         self.boardArrayPieces.loc[row,column] = int(name)
+
+    def RemovePiece(self, row, col):
+        '''
+        Deletes the piece image with the specified name from the board and the piece list
+        :param name: r3 or K1
+        :return: None
+        '''
+        # This is only used when a piece is taken
+        # This change is purely aesthetic
+        name = str(row)+"_"+str(col)
+        self.canvas.delete(name) # Removes it based on its location id
+        self.boardArrayPieces.loc[row,col] = 0
 
     def One(self, event):
         if self.validClick:
@@ -303,16 +317,12 @@ class GameBoard(tk.Frame):
             self.AddPiece("9", self.imageHolder["9"], row, col)
             self.validClick = False
 
-    def RemovePiece(self, name):
-        '''
-        Deletes the piece image with the specified name from the board and the piece list
-        :param name: r3 or K1
-        :return: None
-        '''
-        # This is only used when a piece is taken
-        # This change is purely aesthetic
-        self.canvas.delete(name) # Removes it based on a piece_id from a chesspiece object
-        del self.pieces[name] # We also remove it from the pieces list
+    def Delete(self, event):
+        if event.keysym == "BackSpace":
+            if not self.validClick:
+                row = self.falseSquare[0]
+                col = self.falseSquare[1]
+                self.RemovePiece(row,col)
 
     def Initiate(self):
         '''
