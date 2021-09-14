@@ -136,6 +136,18 @@ class GameBoard(tk.Frame):
 
         # Binding configuration and left mouse click
         self.canvas.bind("<Button 1>",self.GetCoords) # This allows the clicking to be tracked
+        # Adding all the numbers for adding values
+        self.canvas.focus_set()
+        self.canvas.bind("1",self.One) # This allows the clicking to be tracked
+        self.canvas.bind("2",self.Two) # This allows the clicking to be tracked
+        self.canvas.bind("3",self.Three) # This allows the clicking to be tracked
+        self.canvas.bind("4",self.Four) # This allows the clicking to be tracked
+        self.canvas.bind("5",self.Five) # This allows the clicking to be tracked
+        self.canvas.bind("6",self.Six) # This allows the clicking to be tracked
+        self.canvas.bind("7",self.Seven) # This allows the clicking to be tracked
+        self.canvas.bind("8",self.Eight) # This allows the clicking to be tracked
+        self.canvas.bind("9",self.Nine) # This allows the clicking to be tracked
+
         # If a the user changes the window size then the refresh call is made. This is defined below
         # This function is also used to make the board
         self.canvas.bind("<Configure>", self.refresh) # This shouldn't happen as the size has been locked
@@ -164,18 +176,22 @@ class GameBoard(tk.Frame):
         col = math.floor(xcoords / offset) # Finding the square the player means
         row = math.floor(ycoords / offset)
         if col <= self.columns-1 and row <= self.rows-1: # Have we clicked within the bounds of the board
-            self.canvas.delete("move") # Clearing all types of highlighting currently o the board
-            self.canvas.delete("highlight")
-            self.canvas.delete("example")
             self.HighlightSquare(row,col,"blue",'highlight') # Adding a blue edge around the square
-            self.square_text_x.set("Selected Square (x) = "+str(col+1)) # Indicating the selected square
-            self.square_text_y.set("Selected Square (y) = "+str(row+1))
             # Then checking for what piece that is
             found_key = []
             if self.boardArrayPieces.loc[row,col] != 0:
                 found_key = self.boardArrayPieces.loc[row,col]
+                self.validClick = False
+                self.canvas.delete("highlight")  # Clear highlighting
+                self.canvas.delete("example")
+                self.HighlightSquare(row,col,"red",'highlight')  # Display a red edge
+            else:
+                self.canvas.delete("move")  # Clearing all types of highlighting currently o the board
+                self.canvas.delete("highlight")
+                self.canvas.delete("example")
+                self.HighlightSquare(row,col,"blue",'highlight') # Adding a blue edge around the square
+                self.desiredSquare = [row,col] # Saving this information in the desiredSquare variable
                 self.validClick = True
-            self.desiredSquare = [row,col] # Saving this information in the desiredSquare variable
 
     def HighlightSquare(self,row,col,colour,tag):
         '''
@@ -211,7 +227,7 @@ class GameBoard(tk.Frame):
 
     def AddPiece(self, name, image, row, column):
         '''
-        Adds a picture of the piece to the board at 0 0 before calling PlacePiece to allign it to the row/column
+        Adds a picture of the piece to the board at the square defined by row/column
         :param name: Piece name such as r3 or K1
         :param image: An image from the imageholder dictionary
         :param row: Target row on the board
@@ -219,9 +235,73 @@ class GameBoard(tk.Frame):
         :return: None
         '''
         # We can add a piece to the board at the requested location
-        x0 = (column * self.size) + int(self.size/2) # Works out where it should be in pixels
-        y0 = (row * self.size) + int(self.size/2)
-        self.canvas.create_image(x0,y0, image=image, anchor="c") # First we create the image in the top left
+        x0 = (column * self.size) + int(self.size/2) + 2 # Works out where it should be in pixels
+        y0 = (row * self.size) + int(self.size/2) + 2
+        self.canvas.create_image(x0,y0, image=image, tag=name, anchor="c") # First we create the image in the top left
+        self.boardArrayPieces.loc[row,column] = int(name)
+
+    def One(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("1", self.imageHolder["1"], row, col)
+            self.validClick = False
+
+    def Two(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("2", self.imageHolder["2"], row, col)
+            self.validClick = False
+
+    def Three(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("3", self.imageHolder["3"], row, col)
+            self.validClick = False
+
+    def Four(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("4", self.imageHolder["4"], row, col)
+            self.validClick = False
+
+    def Five(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("5", self.imageHolder["5"], row, col)
+            self.validClick = False
+
+    def Six(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("6", self.imageHolder["6"], row, col)
+            self.validClick = False
+
+    def Seven(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("7", self.imageHolder["7"], row, col)
+            self.validClick = False
+
+    def Eight(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("8", self.imageHolder["8"], row, col)
+            self.validClick = False
+
+    def Nine(self, event):
+        if self.validClick:
+            row = self.desiredSquare[0]
+            col = self.desiredSquare[1]
+            self.AddPiece("9", self.imageHolder["9"], row, col)
+            self.validClick = False
 
     def RemovePiece(self, name):
         '''
@@ -240,6 +320,7 @@ class GameBoard(tk.Frame):
         :return: None
         '''
         # This function starts the game upon request
+        self.start_button.config(state="disabled") # Make it so the start button can't be pressed again
         self.initiated = True # Indicates that the game has started
         with open('puzzles') as f:
             lines = f.readlines()
