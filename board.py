@@ -35,7 +35,11 @@ class GameBoard(tk.Frame):
 
         # All of the piece objects are held within a pandas DataFrame in their relative locations.
         # This variable ultimately describes the state of the game
-        self.boardArrayPieces = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        self.boardArray = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        self.bigSquares = pd.DataFrame(np.zeros((3,3)),index=range(0,3),columns=range(0,3))
+        self.columnTrack = pd.DataFrame(np.zeros((1,9)),index=0,columns=range(0,9))
+        self.rowTrack = pd.DataFrame(np.zeros((9,1)),index=range(0,9),columns=0)
+        self.basicMoves = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
 
         self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
         self.falseSquare = [] # Allows squares to be cleared
@@ -46,11 +50,12 @@ class GameBoard(tk.Frame):
         self.imageHolder = {} # Creating a dictionary
         pieceList = "0123456789" # These are all the different types of pieces possible
         for f in pieceList: # Cycling through the pieces
-            with open("Images/"+f+".png","rb") as imageFile: # Opening the photo within the variable space
-                # The images can't be stored as P or p in MacOS as they're read the same
-                # So the colour is introduced by adding b or w after the piece notation
-                string = base64.b64encode(imageFile.read()) # Creating a string that describes the gif in base64 format
-                self.imageHolder[f] = tk.PhotoImage(data=string)
+            for add in ["","_mini"]:
+                with open("Images/"+f+add+".png","rb") as imageFile: # Opening the photo within the variable space
+                    # The images can't be stored as P or p in MacOS as they're read the same
+                    # So the colour is introduced by adding b or w after the piece notation
+                    string = base64.b64encode(imageFile.read()) # Creating a string that describes the gif in base64 format
+                    self.imageHolder[f+add] = tk.PhotoImage(data=string)
 
         # ---------------- Section 2 : Creating the board ----------------
         # The whole board is drawn within the window in TkInter
@@ -69,68 +74,28 @@ class GameBoard(tk.Frame):
         self.quit_button = tk.Button(self,text="Quit Game", fg="red", command=self.quit)
         self.quit_button.place(x=self.square_virtual_size*self.rows + self.side_size/2-20, y=self.square_virtual_size*self.rows-40, height=20)
 
-        # Adding a square/piece selected tracker
-        self.canvas.create_rectangle(self.square_virtual_size*self.rows + 4,2,self.square_virtual_size*self.rows + 10+192,90,width=2) # Just a hollow rectangle to denote an area
-        self.selection_heading = tk.Label(self,text="Current Selection:",font=("TKDefaultFont",18),bg="bisque") # Heading
-        self.selection_heading.place(x=self.square_virtual_size*self.rows + 30, y=18, height=16)
-        self.square_text_x = tk.StringVar() # StringVar variables can be dynamically changed
-        self.square_text_x.set("Selected Square (x) = None")
-        self.selected_displaysx = tk.Label(self,textvariable=self.square_text_x, bg="bisque")
-        self.selected_displaysx.place(x=self.square_virtual_size*self.rows + 15, y=40, height=16)
-        self.square_text_y = tk.StringVar()
-        self.square_text_y.set("Selected Square (y) = None")
-        self.selected_displaysy = tk.Label(self,textvariable=self.square_text_y, bg="bisque")
-        self.selected_displaysy.place(x=self.square_virtual_size*self.rows + 15, y=60, height=16)
-        self.square_text_displaypiece = tk.StringVar()
-        self.square_text_displaypiece.set("Selected Piece = None")
-        self.selected_displaypiece = tk.Label(self,textvariable=self.square_text_displaypiece, bg="bisque")
-        self.selected_displaypiece.place(x=self.square_virtual_size*self.rows + 15, y=80, height=16)
-
-        # Adding playmode selector
-        self.playmode_height = 100 # Allows the whole rectangle to be moved up and down with contents
-        self.canvas.create_rectangle(self.square_virtual_size*self.rows + 4,self.playmode_height,self.square_virtual_size*self.rows + 10+192,self.playmode_height+76,width=2)
-        self.mode_heading = tk.Label(self,text="Playing Modes:",font=("TKDefaultFont",18),bg="bisque")
-        self.mode_heading.place(x=self.square_virtual_size*self.rows + 45, y=self.playmode_height+15, height=20)
-        self.player1_label = tk.Label(self,text="White:",bg="bisque")
-        self.player1_label.place(x=self.square_virtual_size*self.rows + 15, y=self.playmode_height+45, height=16)
-        self.player2_label = tk.Label(self,text="Black:",bg="bisque")
-        self.player2_label.place(x=self.square_virtual_size*self.rows + 15, y=self.playmode_height+65, height=16)
-
-        self.playmode1 = tk.StringVar()
-        self.playmode1.set("Person")
-        self.playmode2 = tk.StringVar()
-        self.playmode2.set("Computer")
-        self.player1 = tk.OptionMenu(self,self.playmode1,"Person","Computer","Random")
-        self.player2 = tk.OptionMenu(self,self.playmode2,"Person","Computer","Random")
-        self.player1.place(x=self.square_virtual_size*self.rows + 80, y=self.playmode_height+45, height=16)
-        self.player1.config(background="bisque") # For optionmenu the bg abbreviation means in the dropdown
-        self.player2.place(x=self.square_virtual_size*self.rows+80,y=self.playmode_height+65,height=16)
-        self.player2.config(background="bisque") # For optionmenu the bg abbreviation means in the dropdown
-
         # Start and reset button
         self.reset_button = tk.Button(self,text="Reset Board",bg="black", command=self.Initiate)
         self.reset_button.place(x=self.square_virtual_size*self.rows + 115, y=202, height=16)
         self.start_button = tk.Button(self,text="Start!",fg="green",background="black",font=("TKDefaultFont",30), command=self.Initiate)
         self.start_button.place(x=self.square_virtual_size * self.rows+20,y=196,height=28)
 
-        # Adding controls section to allow the game to be played
-        self.controls_height = 225
-        self.controls_heading = tk.Label(self,text="Controls:",font=("TKDefaultFont",18),bg="bisque")
-        self.selectbuttonstring = tk.StringVar()
-        self.selectbuttonstring.set("Select Piece")
-        self.square_text_displaypiece_bybutton = tk.StringVar()
-        self.square_text_displaypiece_bybutton.set("None")
-        self.selected_displaypiece_bybutton = tk.Label(self,textvariable=self.square_text_displaypiece_bybutton,bg="bisque")
-        self.summary_heading = tk.Label(self,text="Summary:",font=("TKDefaultFont",10),bg="bisque")
-        self.summarylabel1 = tk.Label(self,text="Move:",font=("TKDefaultFont",10),bg="bisque")
-        self.summarylabel1_piece = tk.Label(self,textvariable=self.square_text_displaypiece_bybutton,font=("TKDefaultFont",10),bg="bisque")
-        self.summarylabel2 = tk.Label(self,text="From:",font=("TKDefaultFont",10),bg="bisque")
-        self.oldsquare = tk.StringVar()
-        self.oldsquare.set("[ , ]")
-        self.summarylabel2_piece = tk.Label(self,textvariable=self.oldsquare,font=("TKDefaultFont",10),bg="bisque")
-        self.newsquare = tk.StringVar()
-        self.newsquare.set("[ , ]")
-        self.summarylabel3_piece = tk.Label(self,textvariable=self.newsquare,font=("TKDefaultFont",10),bg="bisque")
+        # Adding information about the game
+        self.canvas.create_rectangle(self.square_virtual_size*9 + 6,2,self.square_virtual_size*9 + 10+192,90,width=2) # Just a hollow rectangle to denote an area
+        self.selection_heading = tk.Label(self,text="Current Game:",font=("TKDefaultFont",18),bg="bisque") # Heading
+        self.selection_heading.place(x=self.square_virtual_size*9 + 36, y=18, height=16)
+        self.square_text_x = tk.StringVar() # StringVar variables can be dynamically changed
+        self.square_text_x.set("Selected Square (x) = None")
+        self.selected_displaysx = tk.Label(self,textvariable=self.square_text_x, bg="bisque")
+        self.selected_displaysx.place(x=self.square_virtual_size*9+17, y=40, height=16)
+        self.square_text_y = tk.StringVar()
+        self.square_text_y.set("Selected Square (y) = None")
+        self.selected_displaysy = tk.Label(self,textvariable=self.square_text_y, bg="bisque")
+        self.selected_displaysy.place(x=self.square_virtual_size*9 + 17, y=60, height=16)
+        self.square_text_displaypiece = tk.StringVar()
+        self.square_text_displaypiece.set("Selected Piece = None")
+        self.selected_displaypiece = tk.Label(self,textvariable=self.square_text_displaypiece, bg="bisque")
+        self.selected_displaypiece.place(x=self.square_virtual_size*9 + 17, y=80, height=16)
 
         self.movebutton = tk.Button(self,text="Move Piece",fg="black",background="black",font=("TKDefaultFont",22), command=self.MovePiece)
         self.movebutton.config(state="disabled")
@@ -180,7 +145,7 @@ class GameBoard(tk.Frame):
         if col <= self.columns-1 and row <= self.rows-1: # Have we clicked within the bounds of the board
             self.HighlightSquare(row,col,"blue",'highlight') # Adding a blue edge around the square
             # Then checking for what piece that is
-            if self.boardArrayPieces.loc[row,col] != 0:
+            if self.boardArray.loc[row,col] != 0:
                 self.validClick = False
                 self.canvas.delete("highlight")  # Clear highlighting
                 self.canvas.delete("example")
@@ -240,19 +205,44 @@ class GameBoard(tk.Frame):
         y0 = (row * self.size) + int(self.size/2) + 2
         tag_name = str(row)+"_"+str(column)
         self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "piece"), anchor="c") # First we create the image in the top left
-        self.boardArrayPieces.loc[row,column] = int(name)
+        self.boardArray.loc[row,column] = int(name)
+        if self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] == 0:
+            self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] = name
+        else:
+            self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] += name
+        self.basicMoves.loc[row,column] = 0
 
     def RemovePiece(self, row, col):
         '''
         Deletes the piece image with the specified name from the board and the piece list
-        :param name: r3 or K1
+        :param row: Row to remove
+        :param col: Colum to remove
         :return: None
         '''
-        # This is only used when a piece is taken
-        # This change is purely aesthetic
         name = str(row)+"_"+str(col)
         self.canvas.delete(name) # Removes it based on its location id
-        self.boardArrayPieces.loc[row,col] = 0
+        self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)] = self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)].strip(str(self.boardArray.loc[row,col]))
+        self.boardArray.loc[row,col] = 0
+
+    def CalculateMoves(self):
+        '''
+        Updates all of the checks after a move has been made (this might have to be streamlined if it takes too long
+        :return: None
+        '''
+        # Checking if basic Sudoku logic can be used
+        self.BasicCheck()
+        
+    def BasicCheck(self):
+        for row_scan in range(0, self.rows):
+            for col_scan in range(0,self.columns):
+                for num in range(1, 10):
+                    if num not in self.bigSquares.loc[math.floor(row_scan/3), math.floor((col_scan/3))]:
+                        t = 1
+                    elif num not in self.columnTrack.loc[0,col_scan]:
+                        t = 1
+                    elif num not in self.rowTrack.loc[row_scan,0]:
+                        t = 1
+
 
     def One(self, event):
         if self.validClick:
@@ -386,8 +376,8 @@ class GameBoard(tk.Frame):
         """
         for row in range(0,8):
             for col in range(0,8):
-                if self.boardArrayPieces.loc[row,col] != 0:
-                    self.AddPiece(self.boardArrayPieces.loc[row,col].getid(),self.imageHolder[self.boardArrayPieces.loc[row,col].getid()[0]],row,col)
+                if self.boardArray.loc[row,col] != 0:
+                    self.AddPiece(self.boardArray.loc[row,col].getid(),self.imageHolder[self.boardArray.loc[row,col].getid()[0]],row,col)
 
     def MovePiece(self):
         '''
@@ -395,14 +385,14 @@ class GameBoard(tk.Frame):
         :return: None
         '''
         # First we check if their is a piece that needs to be removed
-        if self.boardArrayPieces.loc[self.moveSquare[0],self.moveSquare[1]] != 0: # Is the square full
-            self.RemovePiece(self.boardArrayPieces.loc[self.moveSquare[0],self.moveSquare[1]].getid()) # If so remove it
-        self.PlacePiece(self.boardArrayPieces.loc[self.desiredSquare[0],self.desiredSquare[1]].getid(),self.moveSquare[0],self.moveSquare[1]) # Move the original piece
-        self.boardArrayPieces.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArrayPieces.loc[self.desiredSquare[0],self.desiredSquare[1]] # Update boardarray
-        self.boardArrayPieces.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Set the old square to empty
+        if self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] != 0: # Is the square full
+            self.RemovePiece(self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getid()) # If so remove it
+        self.PlacePiece(self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]].getid(),self.moveSquare[0],self.moveSquare[1]) # Move the original piece
+        self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] # Update boardarray
+        self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Set the old square to empty
         self.colourArray.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Same for colour array
-        self.colourArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArrayPieces.loc[self.moveSquare[0],self.moveSquare[1]].getcolour() # Set colour array to the piece colour
-        self.boardArrayPieces.loc[self.moveSquare[0],self.moveSquare[1]].iterate() # Increment a turn for the piece
+        self.colourArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getcolour() # Set colour array to the piece colour
+        self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].iterate() # Increment a turn for the piece
         self.canvas.delete("highlight") # Remove all highlighting
         self.canvas.delete("example")
         self.canvas.delete("move")
