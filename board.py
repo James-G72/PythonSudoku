@@ -207,6 +207,8 @@ class GameBoard(tk.Frame):
         self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "piece"), anchor="c") # First we create the image in the top left
         self.boardArray.loc[row,column] = int(name)
         self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] += name
+        self.columnTrack.loc[0,column] += name
+        self.rowTrack.loc[row,0] += name
         self.basicMoves.loc[row,column] = 0
 
     def RemovePiece(self, row, col):
@@ -230,105 +232,85 @@ class GameBoard(tk.Frame):
         self.BasicCheck()
         
     def BasicCheck(self):
+        '''
+        Checks using base Sudoku rules
+        :return: None
+        '''
+        self.basicPossibles = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
         for row_scan in range(0, self.rows):
             for col_scan in range(0,self.columns):
                 for num in range(1, 10):
-                    if num not in self.bigSquares.loc[math.floor(row_scan/3), math.floor((col_scan/3))]:
-                        t = 1
-                    elif num not in self.columnTrack.loc[0,col_scan]:
-                        t = 1
-                    elif num not in self.rowTrack.loc[row_scan,0]:
-                        t = 1
+                    if str(num) not in self.bigSquares.loc[math.floor(row_scan/3), math.floor((col_scan/3))]:
+                        if str(num) not in self.columnTrack.loc[0,col_scan]:
+                            if str(num) not in self.rowTrack.loc[row_scan,0]:
+                                self.basicPossibles.loc[row_scan,col_scan] += str(num)
+        if not self.basicPossibles.all().all() == "":
+            for row_scan in range(0,3):
+                for col_scan in range(0,3):
+                    for num in range(1, 10):
+                        num_place = 0
+                        num_loc = [10,10]
+                        for row_add in range(0,3):
+                            for col_add in range(0,3):
+                                if self.boardArray.loc[row_scan*3+row_add,col_scan*3+col_add] == 0:
+                                    if row_scan*3+row_add ==  2 and col_scan*3+col_add == 2:
+                                        t = 1
+                                    if str(num) in self.basicPossibles.loc[row_scan*3+row_add,col_scan*3+col_add]:
+                                        num_place += 1
+                                        num_loc = [row_scan*3+row_add,col_scan*3+col_add]
+                        if num_place == 1:
+                            print("Row: "+str(num_loc[0])+" and Col: "+str(num_loc[1])+" = "+str(num))
 
     def One(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("1", self.imageHolder["1"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("1")
 
     def Two(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("2", self.imageHolder["2"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("2")
 
     def Three(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("3", self.imageHolder["3"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("3")
 
     def Four(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("4", self.imageHolder["4"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("4")
 
     def Five(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("5", self.imageHolder["5"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("5")
 
     def Six(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("6", self.imageHolder["6"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("6")
 
     def Seven(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("7", self.imageHolder["7"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("7")
 
     def Eight(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("8", self.imageHolder["8"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("8")
 
     def Nine(self, event):
         if self.validClick:
-            row = self.desiredSquare[0]
-            col = self.desiredSquare[1]
-            self.AddPiece("9", self.imageHolder["9"], row, col)
-            self.validClick = False
-            self.canvas.delete("highlight")  # Clear highlighting
-            self.canvas.delete("example")
-            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+            self.PlacePiece("9")
+
+    def PlacePiece(self, number):
+        '''
+        Called by the keybind functions
+        :param number: The number to be places
+        :return: None
+        '''
+        row = self.desiredSquare[0]
+        col = self.desiredSquare[1]
+        self.AddPiece(number,self.imageHolder[number],row,col)
+        self.validClick = False
+        self.canvas.delete("highlight")  # Clear highlighting
+        self.canvas.delete("example")
+        self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
+        self.CalculateMoves()
 
     def Delete(self, event):
         if event.keysym == "BackSpace":
@@ -351,6 +333,7 @@ class GameBoard(tk.Frame):
         with open('puzzles') as f:
             lines = f.readlines()
         self.DisplayBoard(lines)
+        self.CalculateMoves()
 
     def DisplayBoard(self, board_list):
         """
