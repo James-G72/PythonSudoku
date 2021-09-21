@@ -36,9 +36,9 @@ class GameBoard(tk.Frame):
         # All of the piece objects are held within a pandas DataFrame in their relative locations.
         # This variable ultimately describes the state of the game
         self.boardArray = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
-        self.bigSquares = pd.DataFrame(np.zeros((3,3)),index=range(0,3),columns=range(0,3))
-        self.columnTrack = pd.DataFrame(np.zeros((1,9)),index=0,columns=range(0,9))
-        self.rowTrack = pd.DataFrame(np.zeros((9,1)),index=range(0,9),columns=0)
+        self.bigSquares = pd.DataFrame(np.empty((3,3),dtype=np.str),index=range(0,3),columns=range(0,3))
+        self.columnTrack = pd.DataFrame(np.empty((1,9),dtype=np.str),columns=range(0,9))
+        self.rowTrack = pd.DataFrame(np.empty((9,1),dtype=np.str),index=range(0,9))
         self.basicMoves = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
 
         self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
@@ -206,10 +206,7 @@ class GameBoard(tk.Frame):
         tag_name = str(row)+"_"+str(column)
         self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "piece"), anchor="c") # First we create the image in the top left
         self.boardArray.loc[row,column] = int(name)
-        if self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] == 0:
-            self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] = name
-        else:
-            self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] += name
+        self.bigSquares.loc[math.floor(row/3), math.floor(column/3)] += name
         self.basicMoves.loc[row,column] = 0
 
     def RemovePiece(self, row, col):
@@ -242,7 +239,6 @@ class GameBoard(tk.Frame):
                         t = 1
                     elif num not in self.rowTrack.loc[row_scan,0]:
                         t = 1
-
 
     def One(self, event):
         if self.validClick:
