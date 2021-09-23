@@ -56,6 +56,7 @@ class GameBoard(tk.Frame):
                     # So the colour is introduced by adding b or w after the piece notation
                     string = base64.b64encode(imageFile.read()) # Creating a string that describes the gif in base64 format
                     self.imageHolder[f+add] = tk.PhotoImage(data=string)
+        self.shift = [[0,0],[-5,-5],[0,-5],[5,-5],[-5,0],[0,0],[5,0],[-5,5],[0,5],[5,5]]
 
         # ---------------- Section 2 : Creating the board ----------------
         # The whole board is drawn within the window in TkInter
@@ -79,6 +80,9 @@ class GameBoard(tk.Frame):
         self.reset_button.place(x=self.square_virtual_size*self.rows + 115, y=202, height=16)
         self.start_button = tk.Button(self,text="Start!",fg="green",background="black",font=("TKDefaultFont",30), command=self.Initiate)
         self.start_button.place(x=self.square_virtual_size * self.rows+20,y=196,height=28)
+        self.pencil_button = tk.Button(self,text="Pencil",fg="green",background="black",font=("TKDefaultFont",30), command=self.PencilValues)
+        self.pencil_button.place(x=self.square_virtual_size * self.rows+60,y=250,height=28)
+        self.pencilled = False
 
         # Adding information about the game
         self.canvas.create_rectangle(self.square_virtual_size*9 + 6,2,self.square_virtual_size*9 + 10+192,90,width=2) # Just a hollow rectangle to denote an area
@@ -191,7 +195,7 @@ class GameBoard(tk.Frame):
         for plotter in target_squares: # Cycling through all squares
             self.HighlightSquare(int(plotter[0]),int(plotter[1]),"orange","example") # Adding an orange box around them
 
-    def AddPiece(self, name, image, row, column):
+    def AddNum(self, name, image, row, column):
         '''
         Adds a picture of the piece to the board at the square defined by row/column
         :param name: Piece name such as r3 or K1
@@ -211,7 +215,7 @@ class GameBoard(tk.Frame):
         self.rowTrack.loc[row,0] += name
         self.basicMoves.loc[row,column] = 0
 
-    def RemovePiece(self, row, col):
+    def RemoveNum(self, row, col):
         '''
         Deletes the piece image with the specified name from the board and the piece list
         :param row: Row to remove
@@ -222,6 +226,51 @@ class GameBoard(tk.Frame):
         self.canvas.delete(name) # Removes it based on its location id
         self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)] = self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)].strip(str(self.boardArray.loc[row,col]))
         self.boardArray.loc[row,col] = 0
+        
+    def PencilValues(self):
+        '''
+        Pencils in all values that are possibilities
+        :return: None
+        '''
+        if self.pencilled:
+            self.canvas.delete("pencil")
+            self.pencilled = False
+        else:
+            self.BasicCheck()
+            for row_check in range(0,self.rows):
+                for col_check in range(0,self.columns):
+                    options = self.basicPossibles.loc[row_check,col_check]
+                    if len(options) > 0:
+                        for x in options:
+                            self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
+            self.pencilled = True
+
+    def AddPencil(self, name, image, row, column):
+        '''
+        Adds in a penciled value
+        :param name: Piece name such as r3 or K1
+        :param image: An image from the imageholder dictionary
+        :param row: Target row on the board
+        :param column: Target column on the board
+        :return: None
+        '''
+        # We can add a piece to the board at the requested location
+        x0 = (column * self.size) + int(self.size/2) + 2 # Works out where it should be in pixels
+        y0 = (row * self.size) + int(self.size/2) + 2
+        tag_name = str(row)+"_"+str(column)+"p"
+        x0 += self.shift[int(name)][0]*5
+        y0 += self.shift[int(name)][1]*5
+        self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "pencil"), anchor="c") # First we create the image in the top left
+
+    def RemovePencil(self, row, col):
+        '''
+        Removes a penciled value
+        :param row: Row to remove
+        :param col: Colum to remove
+        :return: None
+        '''
+        name = str(row)+"_"+str(col)+"p"
+        self.canvas.delete(name) # Removes it based on its location id
 
     def CalculateMoves(self):
         '''
@@ -240,10 +289,11 @@ class GameBoard(tk.Frame):
         for row_scan in range(0, self.rows):
             for col_scan in range(0,self.columns):
                 for num in range(1, 10):
-                    if str(num) not in self.bigSquares.loc[math.floor(row_scan/3), math.floor((col_scan/3))]:
-                        if str(num) not in self.columnTrack.loc[0,col_scan]:
-                            if str(num) not in self.rowTrack.loc[row_scan,0]:
-                                self.basicPossibles.loc[row_scan,col_scan] += str(num)
+                    if self.boardArray.loc[row_scan,col_scan] == 0:
+                        if str(num) not in self.bigSquares.loc[math.floor(row_scan/3), math.floor((col_scan/3))]:
+                            if str(num) not in self.columnTrack.loc[0,col_scan]:
+                                if str(num) not in self.rowTrack.loc[row_scan,0]:
+                                    self.basicPossibles.loc[row_scan,col_scan] += str(num)
         if not self.basicPossibles.all().all() == "":
             for row_scan in range(0,3):
                 for col_scan in range(0,3):
@@ -253,13 +303,30 @@ class GameBoard(tk.Frame):
                         for row_add in range(0,3):
                             for col_add in range(0,3):
                                 if self.boardArray.loc[row_scan*3+row_add,col_scan*3+col_add] == 0:
-                                    if row_scan*3+row_add ==  2 and col_scan*3+col_add == 2:
-                                        t = 1
                                     if str(num) in self.basicPossibles.loc[row_scan*3+row_add,col_scan*3+col_add]:
                                         num_place += 1
                                         num_loc = [row_scan*3+row_add,col_scan*3+col_add]
                         if num_place == 1:
                             print("Row: "+str(num_loc[0])+" and Col: "+str(num_loc[1])+" = "+str(num))
+
+    def HiddenCheck(self):
+        '''
+        Checks if any of the possible values can be eliminated by simple logic
+        :return: None
+        '''
+        for row_scan in range(0,3):
+            for col_scan in range(0,3):
+                for num in range(1, 10):
+                    for row_add in range(0,3):
+                        for col_add in range(0,3):
+                            if self.boardArray.loc[row_scan*3+row_add,col_scan*3+col_add] == 0:
+                                if row_scan*3+row_add ==  2 and col_scan*3+col_add == 2:
+                                    t = 1
+                                if str(num) in self.basicPossibles.loc[row_scan*3+row_add,col_scan*3+col_add]:
+                                    num_place += 1
+                                    num_loc = [row_scan*3+row_add,col_scan*3+col_add]
+                    if num_place == 1:
+                        print("Row: "+str(num_loc[0])+" and Col: "+str(num_loc[1])+" = "+str(num))
 
     def One(self, event):
         if self.validClick:
@@ -305,7 +372,8 @@ class GameBoard(tk.Frame):
         '''
         row = self.desiredSquare[0]
         col = self.desiredSquare[1]
-        self.AddPiece(number,self.imageHolder[number],row,col)
+        self.AddNum(number,self.imageHolder[number],row,col)
+        self.RemovePencil(row,col)
         self.validClick = False
         self.canvas.delete("highlight")  # Clear highlighting
         self.canvas.delete("example")
@@ -317,7 +385,7 @@ class GameBoard(tk.Frame):
             if not self.validClick:
                 row = self.falseSquare[0]
                 col = self.falseSquare[1]
-                self.RemovePiece(row,col)
+                self.RemoveNum(row,col)
                 self.canvas.delete("highlight")  # Clear highlighting
                 self.canvas.delete("example")
                 self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
@@ -346,7 +414,7 @@ class GameBoard(tk.Frame):
                 if col_string == "\n":
                     continue
                 if col_string != "0":
-                    self.AddPiece(col_string, self.imageHolder[col_string], row, col)
+                    self.AddNum(col_string, self.imageHolder[col_string], row, col)
 
     def VisualsfromBoard(self):
         """
@@ -356,7 +424,7 @@ class GameBoard(tk.Frame):
         for row in range(0,8):
             for col in range(0,8):
                 if self.boardArray.loc[row,col] != 0:
-                    self.AddPiece(self.boardArray.loc[row,col].getid(),self.imageHolder[self.boardArray.loc[row,col].getid()[0]],row,col)
+                    self.AddNum(self.boardArray.loc[row,col].getid(),self.imageHolder[self.boardArray.loc[row,col].getid()[0]],row,col)
 
     def MovePiece(self):
         '''
@@ -365,7 +433,7 @@ class GameBoard(tk.Frame):
         '''
         # First we check if their is a piece that needs to be removed
         if self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] != 0: # Is the square full
-            self.RemovePiece(self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getid()) # If so remove it
+            self.RemoveNum(self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getid()) # If so remove it
         self.PlacePiece(self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]].getid(),self.moveSquare[0],self.moveSquare[1]) # Move the original piece
         self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] # Update boardarray
         self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Set the old square to empty
