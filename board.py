@@ -40,6 +40,7 @@ class GameBoard(tk.Frame):
         self.columnTrack = pd.DataFrame(np.empty((1,9),dtype=np.str),columns=range(0,9))
         self.rowTrack = pd.DataFrame(np.empty((9,1),dtype=np.str),index=range(0,9))
         self.basicMoves = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        self.manualPencils = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
 
         self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
         self.falseSquare = [] # Allows squares to be cleared
@@ -56,6 +57,10 @@ class GameBoard(tk.Frame):
                     # So the colour is introduced by adding b or w after the piece notation
                     string = base64.b64encode(imageFile.read()) # Creating a string that describes the gif in base64 format
                     self.imageHolder[f+add] = tk.PhotoImage(data=string)
+        with open("Images/pencil.png","rb") as imageFile:
+            string = base64.b64encode(imageFile.read())
+            self.imageHolder["pencil"] = tk.PhotoImage(data=string)
+        # List that is used to control the location of pencil values
         self.shift = [[0,0],[-5,-5],[0,-5],[5,-5],[-5,0],[0,0],[5,0],[-5,5],[0,5],[5,5]]
 
         # ---------------- Section 2 : Creating the board ----------------
@@ -75,14 +80,25 @@ class GameBoard(tk.Frame):
         self.quit_button = tk.Button(self,text="Quit Game", fg="red", command=self.quit)
         self.quit_button.place(x=self.square_virtual_size*self.rows + self.side_size/2-20, y=self.square_virtual_size*self.rows-40, height=20)
 
+        def PencilToggle(self):
+            t = 1
+
         # Start and reset button
         self.reset_button = tk.Button(self,text="Reset Board",bg="black", command=self.Initiate)
-        self.reset_button.place(x=self.square_virtual_size*self.rows + 115, y=202, height=16)
+        self.reset_button.place(x=self.square_virtual_size*self.rows + 115, y=110, height=16)
         self.start_button = tk.Button(self,text="Start!",fg="green",background="black",font=("TKDefaultFont",30), command=self.Initiate)
-        self.start_button.place(x=self.square_virtual_size * self.rows+20,y=196,height=28)
-        self.pencil_button = tk.Button(self,text="Pencil",fg="green",background="black",font=("TKDefaultFont",30), command=self.PencilValues)
-        self.pencil_button.place(x=self.square_virtual_size * self.rows+60,y=250,height=28)
+        self.start_button.place(x=self.square_virtual_size * self.rows+20,y=104,height=28)
+        self.canvas.create_rectangle(self.square_virtual_size*9 + 6,232,self.square_virtual_size*9 + 10+192,302,width=2) # Just a hollow rectangle to denote an area
+        self.pencil_mode = tk.Label(self,text="Pencil Mode:", bg="bisque")
+        self.pencil_mode.place(x=self.square_virtual_size * self.rows+20,y=250,height=28)
+        self.pencil_indicator = tk.StringVar()
+        self.pencil_indicator.set("Off")
+        self.pencil_button = tk.Radiobutton(self,textvariable=self.pencil_indicator,bg="red",indicatoron=False,width=8,command=self.PencilToggle)
+        self.pencil_button.place(x=self.square_virtual_size * self.rows+130,y=250,height=28)
+        self.canvas.create_image(self.square_virtual_size * self.rows+105,252,image=self.imageHolder["pencil"],tags="pencil_icon",anchor="c")
         self.pencilled = False
+        self.auto_pencil_button = tk.Button(self,text="Auto Pencil",fg="green",background="black",font=("TKDefaultFont",20), command=self.PencilValues)
+        self.auto_pencil_button.place(x=self.square_virtual_size * self.rows+50,y=285,height=20)
 
         # Adding information about the game
         self.canvas.create_rectangle(self.square_virtual_size*9 + 6,2,self.square_virtual_size*9 + 10+192,90,width=2) # Just a hollow rectangle to denote an area
@@ -226,6 +242,20 @@ class GameBoard(tk.Frame):
         self.canvas.delete(name) # Removes it based on its location id
         self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)] = self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)].strip(str(self.boardArray.loc[row,col]))
         self.boardArray.loc[row,col] = 0
+
+    def PencilToggle(self):
+        if self.pencil_indicator.get() == "On":
+            self.pencil_indicator.set("Off")
+            self.pencil_button.destroy()
+            self.pencil_button = tk.Radiobutton(self,textvariable=self.pencil_indicator,bg="red",indicatoron=False,width=8,command=self.PencilToggle)
+            self.pencil_button.place(x=self.square_virtual_size * self.rows+130,y=250,height=28)
+            self.pencilled = False
+        else:
+            self.pencil_indicator.set("On")
+            self.pencil_button.destroy()
+            self.pencil_button = tk.Radiobutton(self,textvariable=self.pencil_indicator,bg="green",indicatoron=False,width=8,command=self.PencilToggle)
+            self.pencil_button.place(x=self.square_virtual_size * self.rows+130,y=250,height=28)
+            self.pencilled = True
         
     def PencilValues(self):
         '''
@@ -257,20 +287,27 @@ class GameBoard(tk.Frame):
         # We can add a piece to the board at the requested location
         x0 = (column * self.size) + int(self.size/2) + 2 # Works out where it should be in pixels
         y0 = (row * self.size) + int(self.size/2) + 2
-        tag_name = str(row)+"_"+str(column)+"p"
+        tag_name = str(row)+"_"+str(column)+"p"+name
         x0 += self.shift[int(name)][0]*5
         y0 += self.shift[int(name)][1]*5
         self.canvas.create_image(x0,y0, image=image, tag=(tag_name, "pencil"), anchor="c") # First we create the image in the top left
 
-    def RemovePencil(self, row, col):
+    def RemovePencil(self, row, col, value):
         '''
         Removes a penciled value
         :param row: Row to remove
         :param col: Colum to remove
         :return: None
         '''
-        name = str(row)+"_"+str(col)+"p"
-        self.canvas.delete(name) # Removes it based on its location id
+        if value == "All":
+            for num in self.manualPencils.loc[row,col]:
+                name = str(row)+"_"+str(col)+"p"+num
+                self.canvas.delete(name) # Removes it based on its location id
+                self.manualPencils.loc[row,col] = self.manualPencils.loc[row,col].split(num)[1]
+        else:
+            name = str(row)+"_"+str(col)+"p"+value
+            self.canvas.delete(name)  # Removes it based on its location id
+            self.manualPencils.loc[row,col] = self.manualPencils.loc[row,col].split(value)[1]
 
     def CalculateMoves(self):
         '''
@@ -372,13 +409,25 @@ class GameBoard(tk.Frame):
         '''
         row = self.desiredSquare[0]
         col = self.desiredSquare[1]
-        self.AddNum(number,self.imageHolder[number],row,col)
-        self.RemovePencil(row,col)
-        self.validClick = False
-        self.canvas.delete("highlight")  # Clear highlighting
-        self.canvas.delete("example")
-        self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
-        self.CalculateMoves()
+        if self.pencilled:
+            if self.manualPencils.loc[row,col] == 0:
+                self.AddPencil(number,self.imageHolder[number+"_mini"],row,col)
+                self.manualPencils.loc[row,col] = number
+            else:
+                if number not in self.manualPencils.loc[row,col]:
+                    self.AddPencil(number,self.imageHolder[number+"_mini"],row,col)
+                    self.manualPencils.loc[row,col] += number
+                else:
+                    self.RemovePencil(row,col,number)
+
+        else:
+            self.AddNum(number,self.imageHolder[number],row,col)
+            self.RemovePencil(row,col,"All")
+            self.CalculateMoves()
+            self.validClick = False
+            self.canvas.delete("highlight")  # Clear highlighting
+            self.canvas.delete("example")
+            self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
 
     def Delete(self, event):
         if event.keysym == "BackSpace":
