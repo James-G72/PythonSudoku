@@ -262,18 +262,18 @@ class GameBoard(tk.Frame):
         Pencils in all values that are possibilities
         :return: None
         '''
-        if self.pencilled:
-            self.canvas.delete("pencil")
-            self.pencilled = False
-        else:
-            self.BasicCheck()
-            for row_check in range(0,self.rows):
-                for col_check in range(0,self.columns):
-                    options = self.basicPossibles.loc[row_check,col_check]
-                    if len(options) > 0:
-                        for x in options:
+        self.BasicCheck()
+        for row_check in range(0,self.rows):
+            for col_check in range(0,self.columns):
+                options = self.basicPossibles.loc[row_check,col_check]
+                if len(options) > 0:
+                    for x in options:
+                        if self.manualPencils.loc[row_check,col_check] != 0:
+                            if x not in self.manualPencils.loc[row_check,col_check]:
+                                self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
+                        else:
                             self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
-            self.pencilled = True
+        self.manualPencils = self.basicPossibles
 
     def AddPencil(self, name, image, row, column):
         '''
