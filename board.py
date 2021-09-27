@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import base64
 import math
+import time
 
 class GameBoard(tk.Frame):
     """
@@ -99,6 +100,8 @@ class GameBoard(tk.Frame):
         self.pencilled = False
         self.auto_pencil_button = tk.Button(self,text="Auto Pencil",fg="green",background="black",font=("TKDefaultFont",20), command=self.PencilValues)
         self.auto_pencil_button.place(x=self.square_virtual_size * self.rows+50,y=285,height=20)
+        self.auto_complete_button = tk.Button(self,text="Auto Complete",fg="green",background="black",font=("TKDefaultFont",20), command=self.AutoComplete)
+        self.auto_complete_button.place(x=self.square_virtual_size * self.rows+50,y=325,height=20)
 
         # Adding information about the game
         self.canvas.create_rectangle(self.square_virtual_size*9 + 6,2,self.square_virtual_size*9 + 10+192,90,width=2) # Just a hollow rectangle to denote an area
@@ -263,16 +266,13 @@ class GameBoard(tk.Frame):
         :return: None
         '''
         self.BasicCheck()
+        self.canvas.delete("pencil")
         for row_check in range(0,self.rows):
             for col_check in range(0,self.columns):
                 options = self.basicPossibles.loc[row_check,col_check]
                 if len(options) > 0:
                     for x in options:
-                        if self.manualPencils.loc[row_check,col_check] != 0:
-                            if x not in self.manualPencils.loc[row_check,col_check]:
-                                self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
-                        else:
-                            self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
+                        self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
         self.manualPencils = self.basicPossibles
 
     def AddPencil(self, name, image, row, column):
@@ -364,6 +364,21 @@ class GameBoard(tk.Frame):
                                     num_loc = [row_scan*3+row_add,col_scan*3+col_add]
                     if num_place == 1:
                         print("Row: "+str(num_loc[0])+" and Col: "+str(num_loc[1])+" = "+str(num))
+
+    def AutoComplete(self):
+        '''
+        Completed the board
+        :return: None
+        '''
+        self.BasicCheck()
+        for row_check in range(0,self.rows):
+            for col_check in range(0,self.columns):
+                options = self.basicPossibles.loc[row_check,col_check]
+                if len(options) == 1:
+                    self.AddNum(options,self.imageHolder[options],row_check,col_check)
+                    self.update()
+                    self.AutoComplete()
+                    return
 
     def One(self, event):
         if self.validClick:
