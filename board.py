@@ -96,10 +96,12 @@ class GameBoard(tk.Frame):
         self.pencil_indicator.set("Off")
         self.pencil_button = tk.Radiobutton(self,textvariable=self.pencil_indicator,bg="red",indicatoron=False,width=8,command=self.PencilToggle)
         self.pencil_button.place(x=self.square_virtual_size * self.rows+130,y=250,height=28)
+        self.clear_pencil_button = tk.Button(self,text="Clear Pencil",fg="orange",background="black",font=("TKDefaultFont",15), command=self.ClearAllPencil)
+        self.clear_pencil_button.place(x=self.square_virtual_size * self.rows+115,y=285,height=20)
         self.canvas.create_image(self.square_virtual_size * self.rows+105,252,image=self.imageHolder["pencil"],tags="pencil_icon",anchor="c")
         self.pencilled = False
-        self.auto_pencil_button = tk.Button(self,text="Auto Pencil",fg="green",background="black",font=("TKDefaultFont",20), command=self.PencilValues)
-        self.auto_pencil_button.place(x=self.square_virtual_size * self.rows+50,y=285,height=20)
+        self.auto_pencil_button = tk.Button(self,text="Auto Pencil",fg="green",background="black",font=("TKDefaultFont",15), command=self.PencilValues)
+        self.auto_pencil_button.place(x=self.square_virtual_size * self.rows+25,y=285,height=20)
         self.auto_complete_button = tk.Button(self,text="Auto Complete",fg="green",background="black",font=("TKDefaultFont",20), command=self.AutoComplete)
         self.auto_complete_button.place(x=self.square_virtual_size * self.rows+50,y=325,height=20)
 
@@ -274,6 +276,15 @@ class GameBoard(tk.Frame):
                     for x in options:
                         self.AddPencil(x,self.imageHolder[x+"_mini"],row_check,col_check)
         self.manualPencils = self.basicPossibles
+
+    def ClearAllPencil(self):
+        '''
+        Clear all pencil marks
+        :return: None
+        '''
+        self.canvas.delete("pencil")
+        self.manualPencils = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
+        t = 1
 
     def AddPencil(self, name, image, row, column):
         '''
