@@ -35,16 +35,21 @@ class GameBoard(tk.Frame):
         self.initiated = False # Has a game started and effects the interpretation of clicks on the canvas
 
         # All of the piece objects are held within a pandas DataFrame in their relative locations.
-        # This variable ultimately describes the state of the game
+        # These variable ultimately describes the state of the game
+        # BoardArray reflects the state of the visual board the player can see (only for main numbers)
         self.boardArray = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        # bigSquares is used to perform some Sudoku calculations by holding the values present in the 3x3 squares.
         self.bigSquares = pd.DataFrame(np.empty((3,3),dtype=np.str),index=range(0,3),columns=range(0,3))
+        # Column track and row track similarly allow Sudoku calculations to be applied to the board
         self.columnTrack = pd.DataFrame(np.empty((1,9),dtype=np.str),columns=range(0,9))
         self.rowTrack = pd.DataFrame(np.empty((9,1),dtype=np.str),index=range(0,9))
+        # basicMoves stores the possible base Sudoku moves that can be performed by the player
         self.basicMoves = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        # manualPencils stores the pencil moves that have been added and reflects board visuals
         self.manualPencils = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
 
-        self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
-        self.falseSquare = [] # Allows squares to be cleared
+        self.desiredSquare = [] # This is the square that the player wants to interact with and is locked using the select piece button
+        self.falseSquare = [] # Allows squares to be cleared when the player has clicked an occupied square
         self.validClick = False # This allows the board to know if a valid square to move to has been selected or not. This is stored on this level as it effects labels
         self.moveSquare = [] # This is the square that the player wants to move to
 
@@ -61,7 +66,7 @@ class GameBoard(tk.Frame):
         with open("Images/pencil.png","rb") as imageFile:
             string = base64.b64encode(imageFile.read())
             self.imageHolder["pencil"] = tk.PhotoImage(data=string)
-        # List that is used to control the location of pencil values
+        # List that is used to control the location of pencil values within a square
         self.shift = [[0,0],[-5,-5],[0,-5],[5,-5],[-5,0],[0,0],[5,0],[-5,5],[0,5],[5,5]]
 
         # ---------------- Section 2 : Creating the board ----------------
@@ -81,10 +86,7 @@ class GameBoard(tk.Frame):
         self.quit_button = tk.Button(self,text="Quit Game", fg="red", command=self.quit)
         self.quit_button.place(x=self.square_virtual_size*self.rows + self.side_size/2-20, y=self.square_virtual_size*self.rows-40, height=20)
 
-        def PencilToggle(self):
-            t = 1
-
-        # Start and reset button
+        # Adds the game control buttons that allow for penciling and clearing the board
         self.reset_button = tk.Button(self,text="Reset Board",bg="black", command=self.Initiate)
         self.reset_button.place(x=self.square_virtual_size*self.rows + 115, y=110, height=16)
         self.start_button = tk.Button(self,text="Start!",fg="green",background="black",font=("TKDefaultFont",30), command=self.Initiate)
@@ -121,9 +123,6 @@ class GameBoard(tk.Frame):
         self.square_text_displaypiece.set("Selected Piece = None")
         self.selected_displaypiece = tk.Label(self,textvariable=self.square_text_displaypiece, bg="bisque")
         self.selected_displaypiece.place(x=self.square_virtual_size*9 + 17, y=80, height=16)
-
-        self.movebutton = tk.Button(self,text="Move Piece",fg="black",background="black",font=("TKDefaultFont",22), command=self.MovePiece)
-        self.movebutton.config(state="disabled")
 
         # Binding configuration and left mouse click
         self.canvas.bind("<Button 1>",self.GetCoords) # This allows the clicking to be tracked
@@ -500,44 +499,6 @@ class GameBoard(tk.Frame):
             for col in range(0,8):
                 if self.boardArray.loc[row,col] != 0:
                     self.AddNum(self.boardArray.loc[row,col].getid(),self.imageHolder[self.boardArray.loc[row,col].getid()[0]],row,col)
-
-    def MovePiece(self):
-        '''
-        Runs most of the code to action a turn. Moves all visuals and internal variables as well as calculating new valid moves based on the move made.
-        :return: None
-        '''
-        # First we check if their is a piece that needs to be removed
-        if self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] != 0: # Is the square full
-            self.RemoveNum(self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getid()) # If so remove it
-        self.PlacePiece(self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]].getid(),self.moveSquare[0],self.moveSquare[1]) # Move the original piece
-        self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] # Update boardarray
-        self.boardArray.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Set the old square to empty
-        self.colourArray.loc[self.desiredSquare[0],self.desiredSquare[1]] = 0 # Same for colour array
-        self.colourArray.loc[self.moveSquare[0],self.moveSquare[1]] = self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].getcolour() # Set colour array to the piece colour
-        self.boardArray.loc[self.moveSquare[0],self.moveSquare[1]].iterate() # Increment a turn for the piece
-        self.canvas.delete("highlight") # Remove all highlighting
-        self.canvas.delete("example")
-        self.canvas.delete("move")
-        # Allows for the the piece valid spaces to be updated by the latest move. This also checks to see if either king is in check
-        check = self.UpdatePieceMoves()
-        if check:
-            # Then 1 of the kings is in check. This should only ever be 1 piece
-            # We know which king by the attacks array but it should also only ever be the king whos turn it currently is
-            self.CheckMate()
-        # Flip the turn
-        if self.current_turn_check == "w":
-            self.current_turn_disp.set("Black Pieces")
-            self.current_turn_check = "b"
-            self.current_turn_text.config(bg="black",fg="white")
-            self.holderEnum += 1
-        else:
-            self.current_turn_disp.set("White Pieces")
-            self.current_turn_check = "w"
-            self.current_turn_text.config(fg="black",bg="white")
-            self.fullMove += 1 # This is iterated after black has played their move
-            self.holderEnum -= 1
-        # Invites the computer to take a turn
-        self.CalculateTurn()
 
     def Screenshot(self):
         '''
