@@ -41,7 +41,7 @@ class GameBoard(tk.Frame):
         self.columnTrack = pd.DataFrame(np.empty((1,9),dtype=np.str),columns=range(0,9))
         self.rowTrack = pd.DataFrame(np.empty((9,1),dtype=np.str),index=range(0,9))
         self.basicMoves = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
-        self.manualPencils = pd.DataFrame(np.zeros((self.rows,self.columns)),index=range(0,self.rows),columns=range(0,self.columns))
+        self.manualPencils = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
 
         self.desiredSquare = [] # This is the square that the player wants to move and is locked using the select piece button
         self.falseSquare = [] # Allows squares to be cleared
@@ -150,6 +150,10 @@ class GameBoard(tk.Frame):
         :param event: A click
         :return: None
         '''
+        # Checking if the game has ended. This is done here as there is no good place to perform it
+        if self.EndCheck():
+            exit()
+
         global x0,y0
         x0 = event.x # Event is a click
         y0 = event.y
@@ -201,20 +205,6 @@ class GameBoard(tk.Frame):
         self.canvas.create_line(col * offset,row * offset,col * offset,row * offset+offset,fill=colour,width=3,tag=tag)
         self.canvas.create_line(col * offset+offset,row * offset+offset,col * offset+offset,row * offset,fill=colour,width=3,tag=tag)
         self.canvas.create_line(col * offset+offset,row * offset+offset,col * offset,row * offset+offset,fill=colour,width=3,tag=tag)
-
-    def VisualiseMoves(self,row,col,piece_code):
-        '''
-        Adds visuals for the possible squares to which the selected piece can move
-        :param row:
-        :param col:
-        :param piece_code:
-        :return: None
-        '''
-        self.canvas.delete("example") # Removes all previously highlighted possible moves
-        offset = self.square_virtual_size
-        target_squares = self.PossibleMoves(row,col) # Requesting possible moves for the piece in that sqaure
-        for plotter in target_squares: # Cycling through all squares
-            self.HighlightSquare(int(plotter[0]),int(plotter[1]),"orange","example") # Adding an orange box around them
 
     def AddNum(self, name, image, row, column):
         '''
@@ -284,7 +274,6 @@ class GameBoard(tk.Frame):
         '''
         self.canvas.delete("pencil")
         self.manualPencils = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
-        t = 1
 
     def AddPencil(self, name, image, row, column):
         '''
@@ -391,6 +380,16 @@ class GameBoard(tk.Frame):
                     self.AutoComplete()
                     return
 
+    def EndCheck(self):
+        """
+        Checks the state of the board to detect them all being full
+        :return: bool: True for the game is over, false if not
+        """
+        if self.boardArray.where(self.boardArray==0,1).sum().sum() == 81:
+            return True
+        else:
+            return False
+
     def One(self, event):
         if self.validClick:
             self.PlacePiece("1")
@@ -451,6 +450,7 @@ class GameBoard(tk.Frame):
             self.RemovePencil(row,col,"All")
             self.CalculateMoves()
             self.validClick = False
+            self.falseSquare = self.desiredSquare
             self.canvas.delete("highlight")  # Clear highlighting
             self.canvas.delete("example")
             self.HighlightSquare(row,col,"orange",'highlight')  # Adding a blue edge around the square
