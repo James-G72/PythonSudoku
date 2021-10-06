@@ -235,6 +235,8 @@ class GameBoard(tk.Frame):
         name = str(row)+"_"+str(col)
         self.canvas.delete(name) # Removes it based on its location id
         self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)] = self.bigSquares.loc[math.floor(row / 3),math.floor(col / 3)].strip(str(self.boardArray.loc[row,col]))
+        self.rowTrack.loc[row,0] = self.rowTrack.loc[row,0].strip(str(self.boardArray.loc[row,col]))
+        self.columnTrack.loc[0,col] = self.columnTrack.loc[0,col].strip(str(self.boardArray.loc[row,col]))
         self.boardArray.loc[row,col] = 0
 
     def PencilToggle(self):
@@ -319,6 +321,7 @@ class GameBoard(tk.Frame):
     def BasicCheck(self):
         '''
         Checks using base Sudoku rules
+        This is wrong! 1 in 0 5
         :return: None
         '''
         self.basicPossibles = pd.DataFrame(np.empty((9,9),dtype=np.str),index=range(0,9),columns=range(0,9))
@@ -344,6 +347,7 @@ class GameBoard(tk.Frame):
                                         num_loc = [row_scan*3+row_add,col_scan*3+col_add]
                         if num_place == 1:
                             print("Row: "+str(num_loc[0])+" and Col: "+str(num_loc[1])+" = "+str(num))
+                            self.basicMoves.loc[num_loc[0],num_loc[1]] == num
 
     def HiddenCheck(self):
         '''
